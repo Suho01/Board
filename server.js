@@ -1,22 +1,25 @@
 const express = require('express'); // require : 무언가를 불러와서 변수에 저장하겠다
 const app = express();
-const port = 5000;
+
+const dotenv = require('dotenv');
+dotenv.config();
 
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/public')); // 기본 링크
 
-// mongodb+srv://admin:qwe1234@cluster0.4uiul7i.mongodb.net/
 const {MongoClient, ObjectId} = require('mongodb');
 let db;
 let sample; // sample 데이터
-const url = 'mongodb+srv://admin:qwe1234@cluster0.4uiul7i.mongodb.net/';
+
+const url = `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.4uiul7i.mongodb.net/`;
+
 new MongoClient(url).connect().then((client) => {
     db = client.db("board");
     sample = client.db("sample_training");
     console.log("DB 연결 완료");
 
-    app.listen(port, () => {
-        console.log(`${port}번 포트 서버 실행`);
+    app.listen(process.env.SERVER_PORT, () => {
+        console.log(`${process.env.SERVER_PORT}번 포트 서버 실행`);
     });
 
 }).catch((error) => {
