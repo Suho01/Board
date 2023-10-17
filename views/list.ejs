@@ -16,11 +16,23 @@
             <a href="/view/<%= data[i]._id %>"><%= data[i].title %></a>
         </li>
         <li class="basis-1/2"><%= data[i].content %>
-            <a href="/edit/<%= data[i]._id %>">✏</a>
-            <a href="/delete/<%= data[i]._id %>">✂</a>
+            <a href="/edit/<%= data[i]._id %>">✏수정</a>
+            <a href="javascript:deleteFunc('<%= data[i]._id %>')">🔨삭제</a>
+            <!-- <a href="">✂</a> -->
         </li>
     </ul>
     <% } %>
     <a href="/write">글쓰기</a>
+
+    <script>
+        function deleteFunc(data) {
+            let confirmChk = confirm("정말 삭제하시겠습니까?");
+            console.log(data);
+
+            if (confirmChk) {
+                window.location.href = '/delete/' + data;
+            }
+        }
+    </script>
 </body>
 </html>

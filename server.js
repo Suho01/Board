@@ -48,7 +48,23 @@ app.get('/about', (req, res) => {
 });
 
 app.get('/list', async (req, res) => {
-    const result = await db.collection("notice").find().toArray();
+    const result = await db.collection("notice").find().limit(5).toArray();
+    console.log(result[0]);
+
+    res.render("list.ejs", {
+        data : result
+    });
+});
+app.get('/list/2', async (req, res) => {
+    const result = await db.collection("notice").find().skip(6).limit(5).toArray();
+    console.log(result[0]);
+
+    res.render("list.ejs", {
+        data : result
+    });
+});
+app.get('/list/:id', async (req, res) => {
+    const result = await db.collection("notice").find().skip((req.params.id - 1) * 5).limit(5).toArray();
     console.log(result[0]);
 
     res.render("list.ejs", {
@@ -93,18 +109,6 @@ app.post('/add', async (req, res) => {
     res.redirect('/list');
 });
 
-app.get('/delete/:id', async (req, res) => {
-    try {
-        await db.collection("notice").deleteOne({
-            _id : new ObjectId(req.params.id)
-        })
-        const result = "";        
-    } catch(error) {
-        console.log(error);
-    }
-    res.redirect('/list');
-})
-
 app.put('/edit', async (req, res) => {
     // updateOne({문서}, {
         // $set : {원하는 키 : 변경값}
@@ -123,7 +127,6 @@ app.put('/edit', async (req, res) => {
     res.redirect('/list');
 });
 
-
 app.get('/edit/:id', async (req, res) => {
     const result = await db.collection("notice").findOne({
         _id : new ObjectId(req.params.id)
@@ -133,6 +136,12 @@ app.get('/edit/:id', async (req, res) => {
     });
 });
 
+app.get('/delete/:id', async (req, res) => {
+    await db.collection("notice").deleteOne({
+        _id : new ObjectId(req.params.id)
+    });
+    res.redirect('/list');
+});
 
 
 // 1. Uniform Interface : 여러 Url과 method는 일관성이 있어야하며, 하나의 Url에서는 하나의 데이터만 가져오게 디자인하며, 간결하고 예측 가능한 Url과 method를 만들어야한다.
