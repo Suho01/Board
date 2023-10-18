@@ -6,12 +6,14 @@
     <title>Document</title>
 </head>
 <body>
-    <form action="/edit?_method=PUT" method="post">
-        <h3>글수정</h3>
-        <input value="<%= data._id %>" type="hidden" name="_id">
-        <input value="<%= data.title %>" type="text" name="title">
-        <input value="<%= data.content %>" type="text" name="content">
-        <button type="submit">완료</button>
-    </form>
+    <div class="lg:w-[1200px] md:w-[768px] w-480px mx-auto">
+        <form action="/edit?_method=PUT" method="post">
+            <h3>글 수정하는 공간~</h3>
+            <input value="<%= data._id %>" type="hidden" name="_id" class="h-10">
+            <input value="<%= data.title %>" type="text" name="title" class="h-10">
+            <input value="<%= data.content %>" type="text" name="content" class="h-10">
+            <button type="submit" class="w-32 h-10 bg-lime-600 hover:bg-lime-900 text-white">완료</button>
+        </form>
+    </div>
 </body>
 </html>

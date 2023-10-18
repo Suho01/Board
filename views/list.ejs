@@ -7,23 +7,27 @@
     <link rel="stylesheet" href="/index.css">
 </head>
 <body>
+    <div class="lg:w-[1200px] md:w-[768px] w-[480px] mx-auto">
+    
     <%- include('nav.ejs') %>
     
     <% for (let i = 0; i < data.length; i++) { %>
-    <ul class="flex justify-between items-center border">
-        
+    <ul class="flex justify-between items-center border px-5 py-2">
         <li class="basis-1/2">
-            <a href="/view/<%= data[i]._id %>"><%= data[i].title %></a>
+            <a href="/view/<%= data[i]._id %>" class="font-bold text-xl"><%= data[i].title %></a>
         </li>
-        <li class="basis-1/2"><%= data[i].content %>
-            <a href="/edit/<%= data[i]._id %>">✏수정</a>
-            <a href="javascript:deleteFunc('<%= data[i]._id %>')">🔨삭제</a>
+        <li class="basis-1/2">내용 : <%= data[i].content %>
+            <div>
+                <a href="/edit/<%= data[i]._id %>" class="text-xs">✏수정</a>
+                <a href="javascript:deleteFunc('<%= data[i]._id %>')" class="text-xs">🔨삭제</a>
+            </div>
             <!-- <a href="">✂</a> -->
         </li>
     </ul>
     <% } %>
-    <a href="/write">글쓰기</a>
+    <button class="bg-orange-400 text-white w-36 h-10 rounded-xl hover:bg-orange-700 duration-200 mt-10 font-bold"><a href="/write">글쓰기</a></button>
 
+    </div>
     <script>
         function deleteFunc(data) {
             let confirmChk = confirm("정말 삭제하시겠습니까?");
