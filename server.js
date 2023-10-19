@@ -1,6 +1,19 @@
 const express = require('express'); // require : 무언가를 불러와서 변수에 저장하겠다
 const app = express();
 const dotenv = require('dotenv');
+const bcrypt = require('bcrypt');
+
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+
+app.use(passport.initialize());
+app.use(session({
+    secret : '암호화에 쓸 비밀번호', // session 문서의 암호화
+    resave : false, // user가 server로 요청할 때마다 갱신할 건지
+    saveUninitialized : false // 로그인 안 해도 session 만들건지
+}));
+app.use(passport.session());
 
 dotenv.config();
 app.use(express.json());
@@ -23,7 +36,7 @@ const url = `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@c
 new MongoClient(url).connect().then((client) => {
     db = client.db("board");
     sample = client.db("sample_training");
-    console.log("DB 연결 완료");
+    // console.log("DB 연결 완료");
 
     app.listen(process.env.SERVER_PORT, () => {
         console.log(`${process.env.SERVER_PORT}번 포트 서버 실행`);
@@ -96,7 +109,7 @@ app.get('/portfolio', (req, res) => {
 });
 
 app.post('/add', async (req, res) => {
-    console.log(req.body);
+    // console.log(req.body);
     try {        
         await db.collection("notice").insertOne({
             title: req.body.title,
@@ -113,7 +126,7 @@ app.put('/edit', async (req, res) => {
     // updateOne({문서}, {
         // $set : {원하는 키 : 변경값}
     // }); 수정하는 방법
-    console.log(req.body);
+    // console.log(req.body);
     await db.collection("notice").updateOne({
         _id : new ObjectId(req.body._id)
     }, {
@@ -140,6 +153,59 @@ app.get('/delete/:id', async (req, res) => {
     await db.collection("notice").deleteOne({
         _id : new ObjectId(req.params.id)
     });
+    res.redirect('/list');
+});
+
+passport.use(new LocalStrategy({
+    usernameField : 'userid',
+    passwordField : 'password'
+}, async (userid, password, cb) => { // cb : 미들웨어(도중에 실행하는 것)
+    let result = await db.collection("users").findOne({
+        userid : userid // userid값이 내가 입력한 id값과 같은지 체크
+    });
+    if (!result) { // 정보가 일치하지 않거나 없다면
+        return cb(null, false, {message: '아이디 혹은 비밀번호가 일치하지 않습니다.'});
+    }
+    if (result.password === password) {
+        return cb(null, result);
+    } else {
+        return cb(null, false, {message: '아이디 혹은 비밀번호가 일치하지 않습니다.'});
+    }
+}));
+
+app.get('/login', (req, res) => {
+    res.render("login.ejs");
+});
+
+app.post('/login', async (req, res, next) => {
+    console.log(req.body);
+    passport.authenticate('local', (error, user, info) => { // error : 에러났을 때 / user : 성공했을 때 / info : 실패했을 때
+        console.log(error, user, info);
+        if (error) return req.status(500).json(error);
+        if (!user) return req.status(401).json(info.message);
+        // req.logIn(user, (error) => {
+        //     if (error) return next(error);
+        //     res.redirect('/');
+        // });
+    })(req, res, next)
+});
+
+app.get('/register', (req, res) => {
+    res.render("register.ejs");
+});
+
+app.post('/register', async (req, res) => {
+    let hashPass = await bcrypt.hash(req.body.password, 10);
+    console.log(hashPass);
+    try {        
+        await db.collection("users").insertOne(
+            {userid: req.body.userid,
+            password: hashPass}
+            // req.body 이렇게로도 쓸 수 있는데 쓸모 없는 데이터까지 들어올 수 있기 때문에 쓰면 안 됨
+        );
+    } catch(error) {
+        console.log(error);
+    }
     res.redirect('/list');
 });
 
