@@ -6,18 +6,24 @@ const bcrypt = require('bcrypt');
 const session = require('express-session');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
+const MongoStore = require('connect-mongo'); // react-redux 같은 느낌~
+
+dotenv.config();
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 app.use(passport.initialize());
 app.use(session({
     secret : '암호화에 쓸 비밀번호', // session 문서의 암호화
     resave : false, // user가 server로 요청할 때마다 갱신할 건지
-    saveUninitialized : false // 로그인 안 해도 session 만들건지
+    saveUninitialized : false, // 로그인 안 해도 session 만들건지
+    cookie : {maxAge: 60 * 60 * 1000}, // 한 시간
+    store : MongoStore.create({
+        mongoUrl : `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.4uiul7i.mongodb.net/`,
+        dbName : "board"
+    })
 }));
 app.use(passport.session());
-
-dotenv.config();
-app.use(express.json());
-app.use(express.urlencoded({extended: true}));
 
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
@@ -166,12 +172,31 @@ passport.use(new LocalStrategy({
     if (!result) { // 정보가 일치하지 않거나 없다면
         return cb(null, false, {message: '아이디 혹은 비밀번호가 일치하지 않습니다.'});
     }
-    if (result.password === password) {
+    const passChk = await bcrypt.compare(password, result.password);
+    console.log(passChk);
+    if (passChk) {
         return cb(null, result);
     } else {
         return cb(null, false, {message: '아이디 혹은 비밀번호가 일치하지 않습니다.'});
     }
 }));
+
+passport.serializeUser((user, done) => {
+    process.nextTick(() => { // 비동기형식으로 실행하는 javaScript 코드
+        done(null, {id: user._id, userid: user.userid}/* 세션에 기록할 내용 */)
+    });
+});
+
+passport.deserializeUser(async (user, done) => {
+    let result = await db.collection("users").findOne({
+        _id: new ObjectId(user.id)
+    });
+    delete result.password;
+    console.log(result);
+    process.nextTick(() => {
+        done(null, result);
+    });
+});
 
 app.get('/login', (req, res) => {
     res.render("login.ejs");
@@ -181,12 +206,12 @@ app.post('/login', async (req, res, next) => {
     console.log(req.body);
     passport.authenticate('local', (error, user, info) => { // error : 에러났을 때 / user : 성공했을 때 / info : 실패했을 때
         console.log(error, user, info);
-        if (error) return req.status(500).json(error);
-        if (!user) return req.status(401).json(info.message);
-        // req.logIn(user, (error) => {
-        //     if (error) return next(error);
-        //     res.redirect('/');
-        // });
+        if (error) return res.status(500).json(error);
+        if (!user) return res.status(401).json(info.message);
+        req.logIn(user, (error) => {
+            if (error) return next(error);
+            res.redirect('/');
+        });
     })(req, res, next)
 });
 
